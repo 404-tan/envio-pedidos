@@ -34,4 +34,9 @@ public sealed class ProdutoRepository : IProdutoRepository
     {
         return await _context.Produtos.ToArrayAsync();
     }
+
+    public async Task<Produto[]> ObterProdutosPorIdsAsync(HashSet<Guid> ids)
+    {
+        return await _context.Produtos.Where(p => ids.Contains(p.Id)).ToArrayAsync();
+    }
 }

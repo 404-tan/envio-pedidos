@@ -30,14 +30,16 @@ public class PedidoRepositoryTest
         ]);
 
 
-        var resultado = await _pedidoRepository.CriarPedidoAsync(pedido);
-        var pedidoCriado = await _pedidoRepository.ObterPedidoPorIdAsync(resultado.Id);
+        var idPedidoCriado = await _pedidoRepository.CriarPedidoAsync(pedido);
+        var pedidoCriado = await _pedidoRepository.ObterPedidoComItensEProdutosPorIdAsync(idPedidoCriado);
 
 
         pedidoCriado.Should().NotBeNull();
         pedidoCriado.Id.Should().NotBeEmpty();
-        pedidoCriado.Id.Should().Be(resultado.Id);
-
+        pedidoCriado.Id.Should().Be(idPedidoCriado);
+        pedidoCriado.Itens.Should().NotBeNull();
+        pedidoCriado.Itens.Should().HaveCount(1);
+        pedidoCriado.Itens.First().Id.Should().NotBeEmpty();
     }
     [Fact]
     public async Task GetPedidos_Por_Cursor_Deve_Retornar_Pedidos()
@@ -67,12 +69,13 @@ public class PedidoRepositoryTest
         var pedido = Pedido.Criar(Guid.NewGuid(), [
             (Guid.NewGuid(), 2, 10m)
         ]);
-        var pedidoCriado = await _pedidoRepository.CriarPedidoAsync(pedido);
+        var idPedidoCriado = await _pedidoRepository.CriarPedidoAsync(pedido);
+        var pedidoCriado = await _pedidoRepository.ObterPedidoComItensEProdutosPorIdAsync(idPedidoCriado);
         Guid adminId = Guid.NewGuid();
-        pedidoCriado.Processar(adminId);
+        pedidoCriado!.Processar(adminId);
         var resultado = await _pedidoRepository.AtualizarStatusPedidoAsync(pedidoCriado);
         resultado.Should().BeTrue();
-        var pedidoAtualizado = await _pedidoRepository.ObterPedidoPorIdAsync(pedidoCriado.Id);
+        var pedidoAtualizado = await _pedidoRepository.ObterPedidoComItensEProdutosPorIdAsync(pedidoCriado.Id);
         pedidoAtualizado.Should().NotBeNull();
         pedidoAtualizado.StatusAtual.Should().Be(PedidoStatus.Processado);
         pedidoAtualizado.HistoricoStatus.Should().NotBeNull();

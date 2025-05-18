@@ -16,5 +16,15 @@ public class PedidoContext : IdentityDbContext<Usuario, Papel, Guid>
             .WithOne()
             .HasForeignKey(h => h.PedidoId)
             .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Usuario>()
+            .HasMany(u => u.PedidosProcessados)
+            .WithOne(u => u.AdministradorProcessador)
+            .HasForeignKey(u => u.ProcessadoPorAdministradorId)
+            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Usuario>()
+            .HasMany(u => u.PedidosFeitos)
+            .WithOne()
+            .HasForeignKey(p => p.IdCliente)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

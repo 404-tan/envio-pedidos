@@ -27,11 +27,11 @@ namespace backend.infra.repos.impl
             return await _context.SaveChangesAsync() > 0;
         }
 
-        public async Task<Pedido> CriarPedidoAsync(Pedido pedido)
+        public async Task<Guid> CriarPedidoAsync(Pedido pedido)
         {
             _context.Pedidos.Add(pedido);
             await _context.SaveChangesAsync();
-            return pedido;
+            return pedido.Id;
         }
 
         public async Task<IList<Pedido>> ObterPedidosPorCursorAsync(DateTime cursor,Guid? ultimoId, Guid? usuarioId, int limite = 10)
@@ -49,7 +49,7 @@ namespace backend.infra.repos.impl
 
             return await query.ToListAsync();
         }
-        public async Task<Pedido?> ObterPedidoPorIdAsync(Guid idPedido)
+        public async Task<Pedido?> ObterPedidoComItensEProdutosPorIdAsync(Guid idPedido)
         {
             var query = _context.Pedidos
                 .Include(p => p.Itens).ThenInclude(i => i.Produto)

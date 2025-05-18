@@ -92,11 +92,12 @@ public class PedidoTest
         var pedido = Pedido.Criar(IdCliente, itens);
         var AdministradorId = Guid.NewGuid();
         pedido.Processar(AdministradorId);
-
+        pedido.ProcessadoPorAdministradorId.Should().Be(AdministradorId);
         pedido.HistoricoStatus.Should().NotBeNull();
         pedido.HistoricoStatus.Should().HaveCount(1);
         pedido.HistoricoStatus.First().Status.Should().Be(PedidoStatus.Criado);
         pedido.HistoricoStatus.First().DataAtualizacao.Should().Be(pedido.DataCriacao);
-        pedido.HistoricoStatus.First().AdministradorId.Should().Be(AdministradorId);
+        pedido.HistoricoStatus.First().UsuarioId.Should().Be(IdCliente);
+
     }
 }

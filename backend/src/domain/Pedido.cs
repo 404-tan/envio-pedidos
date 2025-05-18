@@ -15,6 +15,8 @@ namespace backend.domain
         public DateTime DataCriacao { get; private set; }
         public DateTime? DataAtualizacao { get; private set; }
         public Usuario? Cliente { get; private set; }
+        public Guid? ProcessadoPorAdministradorId { get; private set; }
+        public Usuario? AdministradorProcessador { get; private set; }
         private Pedido(Guid idCliente)
         {
             Id = Guid.NewGuid();
@@ -40,8 +42,9 @@ namespace backend.domain
         {
             if (StatusAtual != PedidoStatus.Criado)
                 throw new InvalidOperationException("Pedido não pode ser processado.");
-            HistoricoStatus?.Add(HistoricoStatusPedido.Criar(Id,AdministradorId,DataCriacao, StatusAtual));
+            HistoricoStatus?.Add(HistoricoStatusPedido.Criar(Id,IdCliente,DataCriacao, StatusAtual));
             StatusAtual = PedidoStatus.Processado;
+            ProcessadoPorAdministradorId = AdministradorId;
             DataAtualizacao = DateTime.UtcNow;
         }
 

@@ -1,0 +1,14 @@
+using backend.domain.enums;
+
+namespace backend.application.DTOs.responses
+{
+    public sealed record CriarPedidoResponse(
+        Guid Id,
+        Guid IdCliente,
+        List<ItemPedidoResponse> Itens,
+        decimal Total,
+        PedidoStatus StatusAtual,
+        DateTime DataCriacao, 
+        DateTime? DataAtualizacao
+    );
+}
