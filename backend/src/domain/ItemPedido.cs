@@ -2,6 +2,7 @@ namespace backend.domain
 {
     public sealed class ItemPedido(Guid produtoId, Guid pedidoId, decimal precoUnitario, int quantidade)
     {
+        public Guid Id { get; private set; } = Guid.NewGuid();
         public Guid ProdutoId { get; private set; } = produtoId;
         public Guid PedidoId { get; private set; } = pedidoId;
         public int Quantidade { get; private set; } = quantidade;

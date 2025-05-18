@@ -1,16 +1,10 @@
 namespace backend.domain
 {
-    public sealed class Produto
+    public sealed class Produto(string nome, decimal precoAtual)
     {
-        public Guid Id { get; }
-        public string Nome { get; private set; }
-        public decimal PrecoAtual { get; private set; }
-        private Produto(string nome, decimal precoAtual)
-        {
-            Id = Guid.NewGuid();
-            Nome = nome;
-            PrecoAtual = precoAtual;
-        }
+        public Guid Id { get; private set; } = Guid.NewGuid();
+        public string Nome { get; private set; } = nome;
+        public decimal PrecoAtual { get; private set; } = precoAtual;
         public static Produto Criar(string nome, decimal precoAtual)
         {
             if (string.IsNullOrWhiteSpace(nome))
