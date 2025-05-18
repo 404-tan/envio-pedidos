@@ -1,0 +1,82 @@
+using FluentAssertions;
+using Xunit;
+using backend.domain;
+using backend.domain.enums;
+
+namespace backend.tests.domain;
+
+
+public class PedidoTest
+{
+    [Fact]
+    public void CriarPedido_DeveTerStatusCriado()
+    {
+
+        Guid IdCliente = Guid.NewGuid();
+        var itens = new List<(Guid idProduto, int qtd, decimal preco)> {
+            (Guid.NewGuid(), 2, 10),
+            (Guid.NewGuid(), 1, 5)
+        };
+
+        var pedido = Pedido.Criar(IdCliente, itens);
+
+        pedido.StatusAtual.Should().Be(PedidoStatus.Criado);
+    }
+
+    [Fact]
+    public void CriarPedido_ComItens_DeveCalcularTotal()
+    {
+
+        Guid IdCliente = Guid.NewGuid();
+        var itens = new List<(Guid idProduto, int qtd, decimal preco)> {
+            (Guid.NewGuid(), 2, 10),
+            (Guid.NewGuid(), 1, 5)
+        };
+
+        var pedido = Pedido.Criar(IdCliente, itens);
+
+        pedido.Total.Should().Be(25);
+    }
+
+    [Fact]
+    public void CriarPedido_SemItens_DeveLancarExcecao()
+    {
+        Guid IdCliente = Guid.NewGuid();
+        Action act = () => Pedido.Criar(IdCliente, []);
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("Pedido deve conter ao menos um item.");
+    }
+    [Fact]
+    public void ProcessarPedido_DeveAlterarStatus()
+    {
+        Guid IdCliente = Guid.NewGuid();
+        var itens = new List<(Guid idProduto, int qtd, decimal preco)> {
+            (Guid.NewGuid(), 2, 10),
+            (Guid.NewGuid(), 1, 5)
+        };
+
+        var pedido = Pedido.Criar(IdCliente, itens);
+        pedido.Processar();
+
+        pedido.StatusAtual.Should().Be(PedidoStatus.Processado);
+    }
+    [Fact]
+    public void ProcessarPedido_ComStatusInvalido_DeveLancarExcecao()
+    {
+        Guid IdCliente = Guid.NewGuid();
+        var itens = new List<(Guid idProduto, int qtd, decimal preco)> {
+            (Guid.NewGuid(), 2, 10),
+            (Guid.NewGuid(), 1, 5)
+        };
+
+        var pedido = Pedido.Criar(IdCliente, itens);
+        pedido.Processar();
+
+        Action act = () => pedido.Processar();
+
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("Pedido não pode ser processado.");
+    }
+
+}
