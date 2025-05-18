@@ -57,7 +57,8 @@ public class PedidoTest
         };
 
         var pedido = Pedido.Criar(IdCliente, itens);
-        pedido.Processar();
+        var AdministradorId = Guid.NewGuid();
+        pedido.Processar(AdministradorId);
 
         pedido.StatusAtual.Should().Be(PedidoStatus.Processado);
     }
@@ -71,12 +72,31 @@ public class PedidoTest
         };
 
         var pedido = Pedido.Criar(IdCliente, itens);
-        pedido.Processar();
+        var AdministradorId = Guid.NewGuid();
+        pedido.Processar(AdministradorId);
 
-        Action act = () => pedido.Processar();
+        Action act = () => pedido.Processar(AdministradorId);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("Pedido não pode ser processado.");
     }
+    [Fact]
+    public void ProcessarPedido_Deve_GerarHistorico()
+    {
+        Guid IdCliente = Guid.NewGuid();
+        var itens = new List<(Guid idProduto, int qtd, decimal preco)> {
+            (Guid.NewGuid(), 2, 10),
+            (Guid.NewGuid(), 1, 5)
+        };
 
+        var pedido = Pedido.Criar(IdCliente, itens);
+        var AdministradorId = Guid.NewGuid();
+        pedido.Processar(AdministradorId);
+
+        pedido.HistoricoStatus.Should().NotBeNull();
+        pedido.HistoricoStatus.Should().HaveCount(1);
+        pedido.HistoricoStatus.First().Status.Should().Be(PedidoStatus.Criado);
+        pedido.HistoricoStatus.First().DataAtualizacao.Should().Be(pedido.DataCriacao);
+        pedido.HistoricoStatus.First().AdministradorId.Should().Be(AdministradorId);
+    }
 }

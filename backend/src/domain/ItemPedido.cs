@@ -8,7 +8,6 @@ namespace backend.domain
         public int Quantidade { get; private set; } = quantidade;
         public decimal PrecoUnitario { get; private set; } = precoUnitario;
         public Produto? Produto { get; private set; }
-        public Pedido? Pedido { get; private set; }
         public decimal Total => Quantidade * PrecoUnitario;
         public static ItemPedido Criar(Guid pedidoId,Guid produtoId, decimal precoUnitario, int quantidade)
         {
