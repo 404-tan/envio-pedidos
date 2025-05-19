@@ -12,14 +12,14 @@ public sealed class ProdutoService : IProdutoService
         _produtoRepository = produtoRepository;
     }
 
-    public async Task<ProdutoResponse[]> ObterProdutos()
+    public async Task<ProdutoResponse[]> ObterProdutosAsync()
     {
         var todosProdutos = await _produtoRepository.ObterProdutosAsync();
 
         return [.. todosProdutos.Select(p => new ProdutoResponse(p.Id, p.Nome, p.PrecoAtual))];
     }
 
-    public async Task<ProdutoResponse[]> ObterProdutosPorIds(Guid[] ids)
+    public async Task<ProdutoResponse[]> ObterProdutosPorIdsAsync(Guid[] ids)
     {
         var produtosFiltradosPorId = await _produtoRepository.ObterProdutosPorIdsAsync(ids.ToHashSet());
         return [.. produtosFiltradosPorId.Select(p => new ProdutoResponse(p.Id, p.Nome, p.PrecoAtual))];

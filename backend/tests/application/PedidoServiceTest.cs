@@ -38,16 +38,16 @@ public class PedidoServiceTest
         var pedido = Pedido.Criar(idCliente, new List<(Guid, int, decimal)> { (produtoDomain.Id, 2, 10m) });
         pedido.Itens[0].ForcarProduto(produtoDomain);
         _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(idCliente);
-        _produtoServiceMock.Setup(x => x.ObterProdutosPorIds(It.IsAny<Guid[]>())).ReturnsAsync([produtoResponse]);
+        _produtoServiceMock.Setup(x => x.ObterProdutosPorIdsAsync(It.IsAny<Guid[]>())).ReturnsAsync([produtoResponse]);
         _pedidoRepositoryMock.Setup(x => x.CriarPedidoAsync(It.IsAny<Pedido>())).ReturnsAsync(pedido.Id);
         _pedidoRepositoryMock.Setup(x => x.ObterPedidoComItensEProdutosPorIdAsync(pedido.Id)).ReturnsAsync(pedido);
 
         var service = CriarService();
 
-        var request = new CriarPedidoRequest(idCliente, itensRequest);
+        var request = new CriarPedidoRequest( itensRequest);
 
         // Act
-        var response = await service.CriarPedido(request);
+        var response = await service.CriarPedidoAsync(request);
 
         // Assert
         response.Should().NotBeNull();
@@ -68,12 +68,12 @@ public class PedidoServiceTest
         };
 
         _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(idCliente);
-        _produtoServiceMock.Setup(x => x.ObterProdutosPorIds(It.IsAny<Guid[]>())).ReturnsAsync([]);
+        _produtoServiceMock.Setup(x => x.ObterProdutosPorIdsAsync(It.IsAny<Guid[]>())).ReturnsAsync([]);
 
         var service = CriarService();
-        var request = new CriarPedidoRequest(idCliente, itensRequest);
+        var request = new CriarPedidoRequest(itensRequest);
 
-        Func<Task> act = async () => await service.CriarPedido(request);
+        Func<Task> act = async () => await service.CriarPedidoAsync(request);
 
         await act.Should().ThrowAsync<Exception>()
             .WithMessage($"O produto {idProduto} não existe.");
@@ -96,10 +96,10 @@ public class PedidoServiceTest
         _pedidoRepositoryMock.Setup(x => x.AtualizarStatusPedidoAsync(pedido)).ReturnsAsync(true);
 
         var service = CriarService();
-        var request = new ProcessarPedidoRequest(pedidoId,usuarioId);
+        var request = new ProcessarPedidoRequest(pedidoId);
 
         // Act
-        var response = await service.ProcessarPedido(request);
+        var response = await service.ProcessarPedidoAsync(request);
 
         // Assert
         response.Should().NotBeNull();
@@ -124,9 +124,9 @@ public class PedidoServiceTest
         _usuarioServiceMock.Setup(x => x.IsAdminAsync(usuarioId)).ReturnsAsync(false);
 
         var service = CriarService();
-        var request = new ProcessarPedidoRequest(pedidoId,usuarioId);
+        var request = new ProcessarPedidoRequest(pedidoId);
 
-        Func<Task> act = async () => await service.ProcessarPedido(request);
+        Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
         await act.Should().ThrowAsync<Exception>()
             .WithMessage("Usuário não autorizado a processar pedidos.");
@@ -144,9 +144,9 @@ public class PedidoServiceTest
         _pedidoRepositoryMock.Setup(x => x.ObterPedidoComItensEProdutosPorIdAsync(pedidoId)).ReturnsAsync((Pedido?)null);
 
         var service = CriarService();
-        var request = new ProcessarPedidoRequest(pedidoId,usuarioId);
+        var request = new ProcessarPedidoRequest(pedidoId);
 
-        Func<Task> act = async () => await service.ProcessarPedido(request);
+        Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
         await act.Should().ThrowAsync<Exception>()
             .WithMessage("Pedido não encontrado.");
@@ -166,9 +166,9 @@ public class PedidoServiceTest
         _pedidoRepositoryMock.Setup(x => x.AtualizarStatusPedidoAsync(pedido)).ReturnsAsync(false);
 
         var service = CriarService();
-        var request = new ProcessarPedidoRequest(pedidoId,usuarioId);
+        var request = new ProcessarPedidoRequest(pedidoId);
 
-        Func<Task> act = async () => await service.ProcessarPedido(request);
+        Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
         await act.Should().ThrowAsync<Exception>()
             .WithMessage("Erro ao atualizar o pedido.");

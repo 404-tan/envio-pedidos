@@ -20,8 +20,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=PedidoDb;User Id=sa;Password=PedidoDbPassword123;TrustServerCertificate=True;"
+      JwtSettings__SecretKey: "chave-super-secreta-123456789012345678901"
+      JwtSettings__Issuer: "envio-pedidos-api"
+      JwtSettings__Audience: "clientes"
+      JwtSettings__ExpiresInMinutes: "60"
     ports:
-      - "5000:80"
+      - "5000:8080"
     depends_on:
       - sqlserver
     networks:

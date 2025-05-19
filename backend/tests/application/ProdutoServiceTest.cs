@@ -34,7 +34,7 @@ public class ProdutoServiceTest
         var service = CriarService();
 
         // Act
-        var result = await service.ObterProdutos();
+        var result = await service.ObterProdutosAsync();
 
         // Assert
         result.Should().HaveCount(2);
@@ -61,7 +61,7 @@ public class ProdutoServiceTest
         var service = CriarService();
 
         // Act
-        var result = await service.ObterProdutosPorIds(new[] { id1 });
+        var result = await service.ObterProdutosPorIdsAsync(new[] { id1 });
 
         // Assert
         result.Should().HaveCount(1);

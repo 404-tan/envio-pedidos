@@ -3,6 +3,6 @@ namespace backend.application.services.contracts;
 
 public interface IProdutoService
 {
-    Task<ProdutoResponse[]> ObterProdutos();
-    Task<ProdutoResponse[]> ObterProdutosPorIds(Guid[] ids);
+    Task<ProdutoResponse[]> ObterProdutosAsync();
+    Task<ProdutoResponse[]> ObterProdutosPorIdsAsync(Guid[] ids);
 }

@@ -19,10 +19,10 @@ namespace backend.application.services.impl
             _usuarioService = usuarioService;
             _produtoService = produtoService;
         }
-        public async Task<PedidoResponse> CriarPedido(CriarPedidoRequest request)
+        public async Task<PedidoResponse> CriarPedidoAsync(CriarPedidoRequest request)
         {
             var idCliente = _usuarioService.ObterIdUsuarioAutenticado();
-            var produtosDoPedido = await _produtoService.ObterProdutosPorIds(request.Itens.Select(i => i.IdProduto).ToArray());
+            var produtosDoPedido = await _produtoService.ObterProdutosPorIdsAsync(request.Itens.Select(i => i.IdProduto).ToArray());
             var listaItens = new List<(Guid IdProduto, int Quantidade, decimal Preco)>();
 
             foreach (var item in request.Itens)
@@ -30,7 +30,7 @@ namespace backend.application.services.impl
                 var produto = produtosDoPedido.FirstOrDefault(p => p.Id == item.IdProduto);
 
                 if (produto == null) throw new Exception($"O produto {item.IdProduto} não existe.");
-                
+
                 listaItens.Add((item.IdProduto, item.Quantidade, produto.PrecoAtual));
             }
 
@@ -61,10 +61,11 @@ namespace backend.application.services.impl
         {
             var idCliente = _usuarioService.ObterIdUsuarioAutenticado();
             var isAdmin = await _usuarioService.IsAdminAsync(idCliente);
-            var pedidos = await _pedidoRepository.ObterPedidosPorCursorAsync(
-                request.Cursor,
+            var pedidos = await _pedidoRepository.ObterPedidosPorCursorEStatusAsync(
+                request.Cursor.HasValue ? request.Cursor.Value : DateTime.UtcNow,
                 idCliente,
                 isAdmin ? null : idCliente,
+                request.Status.HasValue ? request.Status.Value : null,
                 request.Limite
             );
             return [.. pedidos.Select(p => new PedidoResponse(
@@ -83,7 +84,7 @@ namespace backend.application.services.impl
             ))];
         }
 
-        public async Task<ProcessarPedidoResponse> ProcessarPedido(ProcessarPedidoRequest request)
+        public async Task<ProcessarPedidoResponse> ProcessarPedidoAsync(ProcessarPedidoRequest request)
         {
             var usuarioId = _usuarioService.ObterIdUsuarioAutenticado();
             var isAdmin = await _usuarioService.IsAdminAsync(usuarioId);

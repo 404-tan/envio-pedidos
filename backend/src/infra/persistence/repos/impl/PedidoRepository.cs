@@ -1,4 +1,5 @@
 using backend.domain;
+using backend.domain.enums;
 using backend.infra.repos.contracts;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,7 +35,7 @@ namespace backend.infra.repos.impl
             return pedido.Id;
         }
 
-        public async Task<IList<Pedido>> ObterPedidosPorCursorAsync(DateTime cursor,Guid? ultimoId, Guid? usuarioId, int limite = 10)
+        public async Task<IList<Pedido>> ObterPedidosPorCursorEStatusAsync(DateTime cursor,Guid? ultimoId, Guid? usuarioId,PedidoStatus? status, int limite = 10)
         {
             var query = _context.Pedidos
                 .Include(p => p.Itens).ThenInclude(i => i.Produto)
@@ -45,7 +46,8 @@ namespace backend.infra.repos.impl
 
             if (usuarioId.HasValue)
                 query = query.Where(p => p.IdCliente == usuarioId.Value);
-
+            if(status.HasValue)
+                query = query.Where(p => p.StatusAtual == status.Value);
 
             return await query.ToListAsync();
         }

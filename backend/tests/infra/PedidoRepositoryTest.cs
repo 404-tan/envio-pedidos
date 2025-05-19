@@ -15,7 +15,7 @@ public class PedidoRepositoryTest
     public PedidoRepositoryTest()
     {
         var options = new DbContextOptionsBuilder<PedidoContext>()
-            .UseInMemoryDatabase("backend_test")
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
         var context = new PedidoContext(options);
@@ -50,14 +50,14 @@ public class PedidoRepositoryTest
             await _pedidoRepository.CriarPedidoAsync(pedido);
         }
         var cursor = DateTime.UtcNow.AddDays(1);
-        var resultado = await _pedidoRepository.ObterPedidosPorCursorAsync(cursor, null, null, 10);
+        var resultado = await _pedidoRepository.ObterPedidosPorCursorEStatusAsync(cursor, null, null, null, 10);
         resultado.Should().NotBeNull();
         resultado.Should().HaveCount(10);
         resultado.Should().AllBeOfType<Pedido>();
         resultado.Should().OnlyContain(p => p.DataCriacao < cursor);
         cursor = resultado.Last().DataCriacao;
         var ultimoId = resultado.Last().Id;
-        var resultadoPagina2 = await _pedidoRepository.ObterPedidosPorCursorAsync(cursor, ultimoId, null, 10);
+        var resultadoPagina2 = await _pedidoRepository.ObterPedidosPorCursorEStatusAsync(cursor, ultimoId, null, null, 10);
         resultadoPagina2.Should().NotBeNull();
         resultadoPagina2.Should().HaveCount(10);
         resultadoPagina2.Should().AllBeOfType<Pedido>();
@@ -82,5 +82,37 @@ public class PedidoRepositoryTest
         pedidoAtualizado.HistoricoStatus.Should().HaveCount(1);
         pedidoAtualizado.HistoricoStatus.First().Status.Should().Be(PedidoStatus.Criado);
         pedidoAtualizado.HistoricoStatus.First().DataAtualizacao.Should().Be(pedidoAtualizado.DataCriacao);
+    }
+    [Fact]
+    public async Task ObterPedidosPorCursorEStatusAsync_DeveRetornarSomentePedidosComStatusCriado()
+    {
+        // Arrange
+        var pedidosCriados = PedidoFactory.CriarListaDePedidos(5);
+        var pedidosProcessados = PedidoFactory.CriarListaDePedidos(3);
+
+
+        foreach (var pedido in pedidosProcessados)
+        {
+            await _pedidoRepository.CriarPedidoAsync(pedido);
+            pedido.Processar(Guid.NewGuid());
+            await _pedidoRepository.AtualizarStatusPedidoAsync(pedido);
+        }
+
+
+        foreach (var pedido in pedidosCriados)
+        {
+            await _pedidoRepository.CriarPedidoAsync(pedido);
+        }
+
+        var cursor = DateTime.UtcNow.AddDays(1);
+
+        // Act
+        var resultado = await _pedidoRepository.ObterPedidosPorCursorEStatusAsync(
+            cursor, null, null, PedidoStatus.Criado, 20);
+
+        // Assert
+        resultado.Should().NotBeNull();
+        resultado.Should().OnlyContain(p => p.StatusAtual == PedidoStatus.Criado);
+        resultado.Should().HaveCount(pedidosCriados.Count);
     }
 }
