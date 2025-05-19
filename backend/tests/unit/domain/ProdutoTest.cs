@@ -1,7 +1,8 @@
 using FluentAssertions;
 using backend.domain;
 
-namespace backend.tests.domain;
+namespace backend.tests.unit.domain;
+
 
 
 public class ProdutoTest

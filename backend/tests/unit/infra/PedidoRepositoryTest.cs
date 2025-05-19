@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using FluentAssertions;
 using backend.tests.helpers;
 using backend.domain.enums;
-namespace backend.tests.infra;
+namespace backend.tests.unit.infra;
 
 
 public class PedidoRepositoryTest

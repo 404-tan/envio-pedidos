@@ -1,0 +1,25 @@
+<div class="login-container">
+  <h2>Registrar</h2>
+
+  <form [formGroup]="form" (ngSubmit)="login()">
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input id="email" type="email" formControlName="email" />
+  </div>
+    <div class="form-group">
+    <label for="nomeCompleto">Nome Completo</label>
+    <input id="nomeCompleto" type="text" formControlName="nomeCompleto" />
+  </div>
+
+  <div class="form-group">
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" formControlName="senha" />
+  </div>
+    <div class="form-group">
+    <label for="confirmarSenha">Confirmação de senha</label>
+    <input id="confirmarSenha" type="password" formControlName="confirmarSenha" />
+  </div>
+
+  <button type="submit" class="btn-red" [disabled]="form.invalid">Registrar</button>
+</form>
+</div>

@@ -1,0 +1,22 @@
+<div class="login-container">
+  <h2>Entrar</h2>
+
+  <form [formGroup]="form" (ngSubmit)="login()">
+  <div class="form-group">
+    <label for="email">Email</label>
+    <input id="email" type="email" formControlName="email" />
+  </div>
+
+  <div class="form-group">
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" formControlName="senha" />
+  </div>
+
+  <div class="remember-me">
+    <input type="checkbox" id="remember" formControlName="lembrar" />
+    <label for="remember">Lembrar de mim</label>
+  </div>
+
+  <button type="submit" class="btn-red" [disabled]="form.invalid">Entrar</button>
+</form>
+</div>

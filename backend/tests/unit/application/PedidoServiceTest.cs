@@ -13,7 +13,7 @@ using backend.infra.security.contracts;
 using FluentAssertions;
 using Moq;
 using Xunit;
-
+namespace backend.tests.unit.application;
 public class PedidoServiceTest
 {
     private readonly Mock<IPedidoRepository> _pedidoRepositoryMock = new();

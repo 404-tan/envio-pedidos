@@ -9,7 +9,7 @@ using backend.infra.repos.contracts;
 using FluentAssertions;
 using Moq;
 using Xunit;
-
+namespace backend.tests.unit.application;
 public class ProdutoServiceTest
 {
     private readonly Mock<IProdutoRepository> _produtoRepositoryMock = new();

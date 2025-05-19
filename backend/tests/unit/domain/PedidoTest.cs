@@ -3,7 +3,8 @@ using Xunit;
 using backend.domain;
 using backend.domain.enums;
 
-namespace backend.tests.domain;
+namespace backend.tests.unit.domain;
+
 
 
 public class PedidoTest

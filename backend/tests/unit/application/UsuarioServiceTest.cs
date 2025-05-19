@@ -6,7 +6,7 @@ using backend.infra.security.contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using FluentAssertions;
-
+namespace backend.tests.unit.application;
 public class UsuarioServiceTests
 {
     private readonly Mock<UserManager<Usuario>> _userManagerMock;

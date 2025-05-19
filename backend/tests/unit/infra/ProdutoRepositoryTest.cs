@@ -4,7 +4,8 @@ using backend.infra.repos.impl;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.tests.infra;
+namespace backend.tests.unit.infra;
+
 
 public sealed class ProdutoRepositoryTest
 {
