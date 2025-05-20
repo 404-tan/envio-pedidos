@@ -1,0 +1,83 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #fff;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+
+.tela-pedidos {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.titulo {
+  color: #d32f2f;
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.p-table {
+  width: 100%;
+}
+
+.p-table .p-datatable-thead > tr > th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  padding: 12px 16px;
+}
+
+.p-table .p-datatable-tbody > tr > td {
+  padding: 14px 16px;
+  border-color: #f1f1f1;
+  color: #343a40;
+}
+
+.p-table .p-datatable-tbody > tr:hover {
+  background-color: #fff5f5;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: #ffe5e5;
+  color: #d32f2f;
+}
+
+.linha-expandida td {
+  padding: 0;
+  background-color: #fff9f9;
+}
+
+.itens-expandido {
+  padding: 1rem 1.5rem;
+  border-left: 4px solid #d32f2f;
+  background: #fff5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.875rem;
+  border-radius: 0 0 8px 8px;
+}
+.pi-chevron-right {
+  color: red;
+  transition: transform 0.3s ease;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+/* aplica rotação quando expandido */
+.pi-chevron-right.expanded {
+  transform: rotate(90deg);
+}
