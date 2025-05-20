@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using backend.application.DTOs.requests;
 using backend.application.DTOs.responses;
+using backend.application.exceptions;
 using backend.application.services.contracts;
 using backend.application.services.impl;
 using backend.domain;
@@ -34,7 +35,6 @@ public class PedidoServiceTest
             new(produtoDomain.Id,2)
         };
         var produtoResponse = new ProdutoResponse(produtoDomain.Id,"Produto Teste", 10m);
-        
         var pedido = Pedido.Criar(idCliente, new List<(Guid, int, decimal)> { (produtoDomain.Id, 2, 10m) });
         pedido.Itens[0].ForcarProduto(produtoDomain);
         _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(idCliente);
@@ -44,7 +44,7 @@ public class PedidoServiceTest
 
         var service = CriarService();
 
-        var request = new CriarPedidoRequest( itensRequest);
+        var request = new CriarPedidoRequest(itensRequest);
 
         // Act
         var response = await service.CriarPedidoAsync(request);
@@ -58,7 +58,7 @@ public class PedidoServiceTest
     }
 
     [Fact]
-    public async Task CriarPedido_ProdutoNaoExiste_DeveLancarExcecao()
+    public async Task CriarPedido_ProdutoNaoExiste_DeveLancarProdutoNoPedidoInexistenteException()
     {
         var idCliente = Guid.NewGuid();
         var idProduto = Guid.NewGuid();
@@ -75,9 +75,36 @@ public class PedidoServiceTest
 
         Func<Task> act = async () => await service.CriarPedidoAsync(request);
 
-        await act.Should().ThrowAsync<Exception>()
-            .WithMessage($"O produto {idProduto} não existe.");
+        await act.Should().ThrowAsync<ProdutoNoPedidoInexistenteException>();
     }
+
+    [Fact]
+    public async Task CriarPedido_FalhaAoCriar_DeveLancarFalhaAoCriarPedidoException()
+    {
+        var idCliente = Guid.NewGuid();
+        var produtoDomain = Produto.Criar("Produto Teste", 10m);
+        var itensRequest = new List<ItemPedidoRequest>
+        {
+            new(produtoDomain.Id,2)
+        };
+        var produtoResponse = new ProdutoResponse(produtoDomain.Id,"Produto Teste", 10m);
+
+        var pedido = Pedido.Criar(idCliente, new List<(Guid, int, decimal)> { (produtoDomain.Id, 2, 10m) });
+        pedido.Itens[0].ForcarProduto(produtoDomain);
+        _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(idCliente);
+        _produtoServiceMock.Setup(x => x.ObterProdutosPorIdsAsync(It.IsAny<Guid[]>())).ReturnsAsync([produtoResponse]);
+        _pedidoRepositoryMock.Setup(x => x.CriarPedidoAsync(It.IsAny<Pedido>())).ReturnsAsync(pedido.Id);
+        _pedidoRepositoryMock.Setup(x => x.ObterPedidoComItensEProdutosPorIdAsync(pedido.Id)).ReturnsAsync((Pedido?)null);
+
+        var service = CriarService();
+        var request = new CriarPedidoRequest(itensRequest);
+
+        Func<Task> act = async () => await service.CriarPedidoAsync(request);
+
+        await act.Should().ThrowAsync<FalhaAoCriarPedidoException>()
+            .WithMessage("Erro ao criar o pedido.");
+    }
+
     [Fact]
     public async Task ProcessarPedido_DeveRetornarProcessarPedidoResponse()
     {
@@ -115,7 +142,7 @@ public class PedidoServiceTest
     }
 
     [Fact]
-    public async Task ProcessarPedido_UsuarioNaoAdmin_DeveLancarExcecao()
+    public async Task ProcessarPedido_UsuarioNaoAdmin_DeveLancarUsuarioNaoAutorizadoException()
     {
         var usuarioId = Guid.NewGuid();
         var pedidoId = Guid.NewGuid();
@@ -128,12 +155,11 @@ public class PedidoServiceTest
 
         Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
-        await act.Should().ThrowAsync<Exception>()
-            .WithMessage("Usuário não autorizado a processar pedidos.");
+        await act.Should().ThrowAsync<UsuarioNaoAutorizadoException>();
     }
 
     [Fact]
-    public async Task ProcessarPedido_PedidoNaoEncontrado_DeveLancarExcecao()
+    public async Task ProcessarPedido_PedidoNaoEncontrado_DeveLancarPedidoNaoEncontradoException()
     {
         var usuarioId = Guid.NewGuid();
         var pedidoId = Guid.NewGuid();
@@ -148,16 +174,17 @@ public class PedidoServiceTest
 
         Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
-        await act.Should().ThrowAsync<Exception>()
-            .WithMessage("Pedido não encontrado.");
+        await act.Should().ThrowAsync<PedidoNaoEncontradoException>();
     }
 
     [Fact]
-    public async Task ProcessarPedido_AtualizacaoFalha_DeveLancarExcecao()
+    public async Task ProcessarPedido_AtualizacaoFalha_DeveLancarFalhaAtualizarPedidoException()
     {
         var usuarioId = Guid.NewGuid();
         var pedidoId = Guid.NewGuid();
-        var pedido = Pedido.Criar(usuarioId, new List<(Guid, int, decimal)> { (Guid.NewGuid(), 1, 10m) });
+        var produtoDomain = Produto.Criar("Produto Teste", 10m);
+        var pedido = Pedido.Criar(usuarioId, new List<(Guid, int, decimal)> { (produtoDomain.Id, 1, 10m) });
+        pedido.Itens[0].ForcarProduto(produtoDomain);
 
         _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(usuarioId);
         _usuarioServiceMock.Setup(x => x.IsAdminAsync(usuarioId)).ReturnsAsync(true);
@@ -170,7 +197,6 @@ public class PedidoServiceTest
 
         Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
-        await act.Should().ThrowAsync<Exception>()
-            .WithMessage("Erro ao atualizar o pedido.");
+        await act.Should().ThrowAsync<FalhaAtualizarPedidoException>();
     }
 }

@@ -1,12 +1,19 @@
 using Moq;
 using backend.application.DTOs.requests;
+using backend.application.exceptions;
 using backend.application.services.impl;
 using backend.domain;
 using backend.infra.security.contracts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using FluentAssertions;
+using Xunit;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace backend.tests.unit.application;
+
 public class UsuarioServiceTests
 {
     private readonly Mock<UserManager<Usuario>> _userManagerMock;
@@ -47,7 +54,7 @@ public class UsuarioServiceTests
         _userManagerMock.Setup(u => u.CheckPasswordAsync(usuario, "senha123")).ReturnsAsync(true);
         _userManagerMock.Setup(u => u.GetRolesAsync(usuario)).ReturnsAsync(new List<string> { "Cliente" });
 
-        var request = new LoginRequest( usuario.Email, "senha123" );
+        var request = new LoginRequest(usuario.Email, "senha123");
 
         var result = await _service.LogarUsuarioAsync(request);
 
@@ -58,27 +65,77 @@ public class UsuarioServiceTests
     }
 
     [Fact]
-    public async Task LogarUsuarioAsync_DeveRetornarNull_SeEmailNaoExistir()
+    public async Task LogarUsuarioAsync_DeveLancarExcecao_SeEmailNaoExistir()
     {
         _userManagerMock.Setup(u => u.FindByEmailAsync("inexistente@email.com")).ReturnsAsync((Usuario)null);
 
-        var request = new LoginRequest( "inexistente@email.com",  "123");
+        var request = new LoginRequest("inexistente@email.com", "123");
 
-        var result = await _service.LogarUsuarioAsync(request);
+        Func<Task> act = async () => await _service.LogarUsuarioAsync(request);
 
-        result.Should().BeNull();
+        await act.Should().ThrowAsync<UsuarioOuSenhaInvalidosException>();
     }
 
     [Fact]
-    public async Task LogarUsuarioAsync_DeveRetornarNull_SeSenhaForInvalida()
+    public async Task LogarUsuarioAsync_DeveLancarExcecao_SeSenhaForInvalida()
     {
         var usuario = Usuario.Criar("Teste", "email@email.com");
         _userManagerMock.Setup(u => u.FindByEmailAsync(usuario.Email)).ReturnsAsync(usuario);
         _userManagerMock.Setup(u => u.CheckPasswordAsync(usuario, "123")).ReturnsAsync(false);
 
-        var result = await _service.LogarUsuarioAsync(new LoginRequest( usuario.Email,"123" ));
+        var request = new LoginRequest(usuario.Email, "123");
 
-        result.Should().BeNull();
+        Func<Task> act = async () => await _service.LogarUsuarioAsync(request);
+
+        await act.Should().ThrowAsync<UsuarioOuSenhaInvalidosException>();
+    }
+
+    [Fact]
+    public async Task RegistrarUsuarioAsync_DeveLancarExcecao_SeUsuarioJaExiste()
+    {
+        var usuarioExistente = Usuario.Criar("Existente", "existente@email.com");
+        _userManagerMock.Setup(u => u.FindByEmailAsync(usuarioExistente.Email)).ReturnsAsync(usuarioExistente);
+
+        var request = new RegistroRequest(usuarioExistente.NomeCompleto, usuarioExistente.Email, "senha123");
+
+        Func<Task> act = async () => await _service.RegistrarUsuarioAsync(request);
+
+        await act.Should().ThrowAsync<UsuarioJaExisteException>();
+    }
+
+    [Fact]
+    public async Task RegistrarUsuarioAsync_DeveLancarExcecao_SeCriacaoFalhar()
+    {
+        _userManagerMock.Setup(u => u.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((Usuario)null);
+        _userManagerMock.Setup(u => u.CreateAsync(It.IsAny<Usuario>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Senha fraca" }));
+
+        var request = new RegistroRequest("Novo Usuário", "novo@email.com", "123");
+
+        Func<Task> act = async () => await _service.RegistrarUsuarioAsync(request);
+
+        await act.Should().ThrowAsync<FalhaAoCriarUsuarioException>()
+            .WithMessage("*Senha fraca*");
+    }
+
+    [Fact]
+    public async Task RegistrarUsuarioAsync_DeveRegistrarComSucesso()
+    {
+        _userManagerMock.Setup(u => u.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync((Usuario)null);
+        _userManagerMock.Setup(u => u.CreateAsync(It.IsAny<Usuario>(), It.IsAny<string>()))
+            .ReturnsAsync(IdentityResult.Success);
+        _roleManagerMock.Setup(r => r.RoleExistsAsync("Cliente")).ReturnsAsync(true);
+        _userManagerMock.Setup(u => u.AddToRoleAsync(It.IsAny<Usuario>(), "Cliente")).ReturnsAsync(IdentityResult.Success);
+        _userManagerMock.Setup(u => u.GetRolesAsync(It.IsAny<Usuario>())).ReturnsAsync(new List<string> { "Cliente" });
+
+        var request = new RegistroRequest("Novo Usuário", "novo@email.com", "senha123");
+
+        var result = await _service.RegistrarUsuarioAsync(request);
+
+        result.Should().NotBeNull();
+        result.Email.Should().Be(request.Email);
+        result.NomeCompleto.Should().Be(request.NomeCompleto);
+        result.Token.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -97,9 +154,9 @@ public class UsuarioServiceTests
     {
         _usuarioAutenticadoMock.Setup(x => x.ObterId()).Returns(Guid.Empty);
 
-        var act = () => _service.ObterIdUsuarioAutenticado();
+        Action act = () => _service.ObterIdUsuarioAutenticado();
 
-        act.Should().Throw<Exception>().WithMessage("Usuário não autenticado");
+        act.Should().Throw<UsuarioNaoAutenticadoException>();
     }
 
     [Fact]
@@ -114,12 +171,12 @@ public class UsuarioServiceTests
     }
 
     [Fact]
-    public async Task ObterNomeCompletoUsuarioPorIdAsync_DeveRetornarNull_SeUsuarioNaoExiste()
+    public async Task ObterNomeCompletoUsuarioPorIdAsync_DeveLancarExcecao_SeUsuarioNaoExiste()
     {
         _userManagerMock.Setup(x => x.FindByIdAsync(It.IsAny<string>())).ReturnsAsync((Usuario)null);
 
-        var result = await _service.ObterNomeCompletoUsuarioPorIdAsync(Guid.NewGuid());
+        Func<Task> act = async () => await _service.ObterNomeCompletoUsuarioPorIdAsync(Guid.NewGuid());
 
-        result.Should().BeNull();
+        await act.Should().ThrowAsync<UsuarioNaoExisteException>();
     }
 }

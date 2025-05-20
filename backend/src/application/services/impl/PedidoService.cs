@@ -1,5 +1,6 @@
 using backend.application.DTOs.requests;
 using backend.application.DTOs.responses;
+using backend.application.exceptions;
 using backend.application.services.contracts;
 using backend.domain;
 using backend.infra.repos.contracts;
@@ -29,7 +30,7 @@ namespace backend.application.services.impl
             {
                 var produto = produtosDoPedido.FirstOrDefault(p => p.Id == item.IdProduto);
 
-                if (produto == null) throw new Exception($"O produto {item.IdProduto} não existe.");
+                if (produto == null) throw new ProdutoNoPedidoInexistenteException(item.IdProduto.ToString());
 
                 listaItens.Add((item.IdProduto, item.Quantidade, produto.PrecoAtual));
             }
@@ -40,7 +41,7 @@ namespace backend.application.services.impl
             );
             var idPedidoCriado = await _pedidoRepository.CriarPedidoAsync(pedido);
             var pedidoCriado = await _pedidoRepository.ObterPedidoComItensEProdutosPorIdAsync(idPedidoCriado);
-            if (pedidoCriado == null) throw new Exception("Erro ao criar o pedido.");
+            if (pedidoCriado == null) throw new FalhaAoCriarPedidoException("Erro ao criar o pedido.");
             return new PedidoResponse(
                 pedidoCriado.Id,
                 pedidoCriado.IdCliente,
@@ -89,18 +90,19 @@ namespace backend.application.services.impl
             var usuarioId = _usuarioService.ObterIdUsuarioAutenticado();
             var isAdmin = await _usuarioService.IsAdminAsync(usuarioId);
             if (!isAdmin)
-                throw new Exception("Usuário não autorizado a processar pedidos.");
+                throw new UsuarioNaoAutorizadoException();
+
             var nomeAdministrador = await _usuarioService.ObterNomeCompletoUsuarioPorIdAsync(usuarioId);
             var pedido = await _pedidoRepository.ObterPedidoComItensEProdutosPorIdAsync(request.IdPedido);
 
             if (pedido == null)
-                throw new Exception("Pedido não encontrado.");
+                throw new PedidoNaoEncontradoException();
 
             pedido.Processar(usuarioId);
             var atualizacaoRealizada = await _pedidoRepository.AtualizarStatusPedidoAsync(pedido);
 
             if (!atualizacaoRealizada)
-                throw new Exception("Erro ao atualizar o pedido.");
+                throw new FalhaAtualizarPedidoException();
 
             return new ProcessarPedidoResponse(
                 pedido.Id,

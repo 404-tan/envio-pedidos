@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using backend.application.DTOs.requests;
 using backend.application.DTOs.responses;
+using backend.application.exceptions;
 using backend.application.services.contracts;
 using backend.domain;
 using backend.infra.security.contracts;
@@ -38,11 +39,11 @@ namespace backend.application.services.impl
         {
             var usuario = await _userManager.FindByEmailAsync(request.Email);
             if (usuario == null)
-                return null;
+                throw new UsuarioOuSenhaInvalidosException();
 
             var result = await _userManager.CheckPasswordAsync(usuario, request.SenhaDigitada);
             if (!result)
-                return null;
+                throw new UsuarioOuSenhaInvalidosException();
 
             var token = await GerarJwtAsync(usuario);
 
@@ -59,11 +60,14 @@ namespace backend.application.services.impl
         {
             var usuarioExistente = await _userManager.FindByEmailAsync(request.Email);
             if (usuarioExistente != null)
-                return null;
+                throw new UsuarioJaExisteException(request.Email);
+
             var usuario = Usuario.Criar(request.NomeCompleto, request.Email);
             var result = await _userManager.CreateAsync(usuario, request.SenhaDigitada);
-            if (!result.Succeeded)
-                return null;
+            if (!result.Succeeded){
+                var mensagem = string.Join("; ", result.Errors.Select(e => e.Description));
+                throw new FalhaAoCriarUsuarioException(mensagem);
+            }
             var papel = new Papel { Name = "Cliente" };
             if (!await _roleManager.RoleExistsAsync(papel.Name))
             {
@@ -78,13 +82,12 @@ namespace backend.application.services.impl
                 usuario.Email!,
                 token
             );
-
-        }
+        }        
         public Guid ObterIdUsuarioAutenticado()
         {
             var idUsuario = _usuarioAutenticado.ObterId();
             if (idUsuario == Guid.Empty)
-                throw new Exception("Usuário não autenticado");
+                throw new UsuarioNaoAutenticadoException();
             return idUsuario;
         }
         private async Task<string> GerarJwtAsync(Usuario usuario)
@@ -120,7 +123,7 @@ namespace backend.application.services.impl
         {
             var usuario = await _userManager.FindByIdAsync(idUsuario.ToString());
             if (usuario == null)
-                return null;
+                throw new UsuarioNaoExisteException(idUsuario.ToString());
 
             return usuario.NomeCompleto;
         }
