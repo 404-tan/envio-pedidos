@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   sqlserver:
@@ -13,6 +12,20 @@ services:
       - sql_data:/var/opt/mssql
     networks:
       - appnet
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"      
+      - "15672:15672"    
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - appnet
+    restart: always
+
   api:
     build:
       context: backend
@@ -24,10 +37,14 @@ services:
       JwtSettings__Issuer: "envio-pedidos-api"
       JwtSettings__Audience: "clientes"
       JwtSettings__ExpiresInMinutes: "60"
+      RabbitMq__Host: "rabbitmq"   
+      RabbitMq__Username: "guest"
+      RabbitMq__Password: "guest"
     ports:
       - "5000:8080"
     depends_on:
       - sqlserver
+      - rabbitmq
     networks:
       - appnet
     restart: always

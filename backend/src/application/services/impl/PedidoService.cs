@@ -1,10 +1,11 @@
+using backend.application.commands;
 using backend.application.DTOs.requests;
 using backend.application.DTOs.responses;
 using backend.application.exceptions;
 using backend.application.services.contracts;
 using backend.domain;
 using backend.infra.repos.contracts;
-using backend.infra.security.contracts;
+using MassTransit;
 
 namespace backend.application.services.impl
 {
@@ -13,13 +14,15 @@ namespace backend.application.services.impl
         private readonly IPedidoRepository _pedidoRepository;
         private readonly IUsuarioService _usuarioService;
         private readonly IProdutoService _produtoService;
-
-        public PedidoService(IPedidoRepository pedidoRepository, IUsuarioService usuarioService, IProdutoService produtoService)
+        private readonly IPublishEndpoint _publishEndpoint;
+        public PedidoService(IPedidoRepository pedidoRepository, IUsuarioService usuarioService, IProdutoService produtoService, IPublishEndpoint publishEndpoint)
         {
             _pedidoRepository = pedidoRepository;
             _usuarioService = usuarioService;
             _produtoService = produtoService;
+            _publishEndpoint = publishEndpoint;
         }
+    
         public async Task<PedidoResponse> CriarPedidoAsync(CriarPedidoRequest request)
         {
             var idCliente = _usuarioService.ObterIdUsuarioAutenticado();
@@ -84,7 +87,22 @@ namespace backend.application.services.impl
                 p.DataAtualizacao
             ))];
         }
+        public async Task EnfileirarProcessamentoPedidoAsync(ProcessarPedidoRequest request)
+        {
+            var usuarioId = _usuarioService.ObterIdUsuarioAutenticado();
+            var isAdmin = await _usuarioService.IsAdminAsync(usuarioId);
+            if (!isAdmin)
+                throw new UsuarioNaoAutorizadoException();
 
+            var pedido = await _pedidoRepository.ObterPedidoComItensEProdutosPorIdAsync(request.IdPedido);
+            if (pedido == null)
+                throw new PedidoNaoEncontradoException();
+
+            var nomeAdministrador = await _usuarioService.ObterNomeCompletoUsuarioPorIdAsync(usuarioId);
+
+            var command = new ProcessarPedidoCommand(request.IdPedido, usuarioId, nomeAdministrador);
+            await _publishEndpoint.Publish(command);
+        }
         public async Task<ProcessarPedidoResponse> ProcessarPedidoAsync(ProcessarPedidoRequest request)
         {
             var usuarioId = _usuarioService.ObterIdUsuarioAutenticado();

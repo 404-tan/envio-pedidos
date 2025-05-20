@@ -54,5 +54,23 @@ public static class PedidoEndpoints
             }
         })
         .WithDescription("Processa um pedido (altera o status para processado). Apenas administradores podem processar pedidos.");
+
+        app.MapPost("/api/pedidos/enfileirar-processamento", [Authorize(Roles = "Admin")] async (ProcessarPedidoRequest req, IPedidoService service) =>
+        {
+            try
+            {
+                await service.EnfileirarProcessamentoPedidoAsync(req);
+                return Results.Accepted();
+            }
+            catch (UsuarioNaoAutorizadoException)
+            {
+                return Results.Forbid();
+            }
+            catch (PedidoNaoEncontradoException ex)
+            {
+                return Results.NotFound(new { erro = ex.Message });
+            }
+        })
+        .WithDescription("Enfileira o processamento de um pedido para ser processado de forma assíncrona via RabbitMQ. Apenas administradores podem enfileirar.");
     }
 }

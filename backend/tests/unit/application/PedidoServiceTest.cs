@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using backend.application.commands;
 using backend.application.DTOs.requests;
 using backend.application.DTOs.responses;
 using backend.application.exceptions;
@@ -12,18 +13,19 @@ using backend.domain.enums;
 using backend.infra.repos.contracts;
 using backend.infra.security.contracts;
 using FluentAssertions;
+using MassTransit;
 using Moq;
 using Xunit;
 namespace backend.tests.unit.application;
+
 public class PedidoServiceTest
 {
     private readonly Mock<IPedidoRepository> _pedidoRepositoryMock = new();
     private readonly Mock<IUsuarioService> _usuarioServiceMock = new();
     private readonly Mock<IProdutoService> _produtoServiceMock = new();
-
+    private readonly Mock<IPublishEndpoint> _publishEndpointMock = new();
     private PedidoService CriarService()
-        => new(_pedidoRepositoryMock.Object, _usuarioServiceMock.Object, _produtoServiceMock.Object);
-
+        => new(_pedidoRepositoryMock.Object, _usuarioServiceMock.Object, _produtoServiceMock.Object, _publishEndpointMock.Object);
     [Fact]
     public async Task CriarPedido_DeveRetornarPedidoResponse()
     {
@@ -34,7 +36,7 @@ public class PedidoServiceTest
         {
             new(produtoDomain.Id,2)
         };
-        var produtoResponse = new ProdutoResponse(produtoDomain.Id,"Produto Teste", 10m);
+        var produtoResponse = new ProdutoResponse(produtoDomain.Id, "Produto Teste", 10m);
         var pedido = Pedido.Criar(idCliente, new List<(Guid, int, decimal)> { (produtoDomain.Id, 2, 10m) });
         pedido.Itens[0].ForcarProduto(produtoDomain);
         _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(idCliente);
@@ -87,7 +89,7 @@ public class PedidoServiceTest
         {
             new(produtoDomain.Id,2)
         };
-        var produtoResponse = new ProdutoResponse(produtoDomain.Id,"Produto Teste", 10m);
+        var produtoResponse = new ProdutoResponse(produtoDomain.Id, "Produto Teste", 10m);
 
         var pedido = Pedido.Criar(idCliente, new List<(Guid, int, decimal)> { (produtoDomain.Id, 2, 10m) });
         pedido.Itens[0].ForcarProduto(produtoDomain);
@@ -198,5 +200,66 @@ public class PedidoServiceTest
         Func<Task> act = async () => await service.ProcessarPedidoAsync(request);
 
         await act.Should().ThrowAsync<FalhaAtualizarPedidoException>();
+    }
+    [Fact]
+    public async Task EnfileirarProcessamentoPedidoAsync_DevePublicarProcessarPedidoCommand()
+    {
+        // Arrange
+        var usuarioId = Guid.NewGuid();
+        var pedidoId = Guid.NewGuid();
+        var nomeAdmin = "Admin";
+        var pedido = Pedido.Criar(usuarioId, new List<(Guid, int, decimal)> { (Guid.NewGuid(), 1, 10m) });
+
+        _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(usuarioId);
+        _usuarioServiceMock.Setup(x => x.IsAdminAsync(usuarioId)).ReturnsAsync(true);
+        _usuarioServiceMock.Setup(x => x.ObterNomeCompletoUsuarioPorIdAsync(usuarioId)).ReturnsAsync(nomeAdmin);
+        _pedidoRepositoryMock.Setup(x => x.ObterPedidoComItensEProdutosPorIdAsync(pedidoId)).ReturnsAsync(pedido);
+
+        var service = CriarService();
+        var request = new ProcessarPedidoRequest(pedidoId);
+
+        // Act
+        await service.EnfileirarProcessamentoPedidoAsync(request);
+
+        // Assert
+        _publishEndpointMock.Verify(x =>
+            x.Publish(It.Is<ProcessarPedidoCommand>(cmd =>
+                cmd.IdPedido == pedidoId &&
+                cmd.IdAdministrador == usuarioId &&
+                cmd.NomeAdministrador == nomeAdmin
+            ), default), Times.Once);
+    }
+    [Fact]
+    public async Task EnfileirarProcessamentoPedidoAsync_UsuarioNaoAdmin_DeveLancarUsuarioNaoAutorizadoException()
+    {
+        var usuarioId = Guid.NewGuid();
+        var pedidoId = Guid.NewGuid();
+
+        _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(usuarioId);
+        _usuarioServiceMock.Setup(x => x.IsAdminAsync(usuarioId)).ReturnsAsync(false);
+
+        var service = CriarService();
+        var request = new ProcessarPedidoRequest(pedidoId);
+
+        Func<Task> act = async () => await service.EnfileirarProcessamentoPedidoAsync(request);
+
+        await act.Should().ThrowAsync<UsuarioNaoAutorizadoException>();
+    }
+    [Fact]
+    public async Task EnfileirarProcessamentoPedidoAsync_PedidoNaoEncontrado_DeveLancarPedidoNaoEncontradoException()
+    {
+        var usuarioId = Guid.NewGuid();
+        var pedidoId = Guid.NewGuid();
+
+        _usuarioServiceMock.Setup(x => x.ObterIdUsuarioAutenticado()).Returns(usuarioId);
+        _usuarioServiceMock.Setup(x => x.IsAdminAsync(usuarioId)).ReturnsAsync(true);
+        _pedidoRepositoryMock.Setup(x => x.ObterPedidoComItensEProdutosPorIdAsync(pedidoId)).ReturnsAsync((Pedido?)null);
+
+        var service = CriarService();
+        var request = new ProcessarPedidoRequest(pedidoId);
+
+        Func<Task> act = async () => await service.EnfileirarProcessamentoPedidoAsync(request);
+
+        await act.Should().ThrowAsync<PedidoNaoEncontradoException>();
     }
 }

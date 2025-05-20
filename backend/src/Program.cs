@@ -7,6 +7,7 @@ using backend.infra.repos.contracts;
 using backend.infra.repos.impl;
 using backend.infra.security.contracts;
 using backend.infra.security.impl;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,22 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod()
                   .AllowCredentials(); 
         });
+});
+
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumers(typeof(Program).Assembly);
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMq:Host"], "/", h =>
+        {
+            h.Username(builder.Configuration["RabbitMq:Username"]);
+            h.Password(builder.Configuration["RabbitMq:Password"]);
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
 });
 
 builder.Services.AddScoped<IPedidoRepository, PedidoRepository>();

@@ -8,5 +8,6 @@ namespace backend.application.services.contracts
         Task<PedidoResponse> CriarPedidoAsync(CriarPedidoRequest request);
         Task<IList<PedidoResponse>> ObterPedidosPorCursorEUsuarioAutenticadoAsync(ListarPedidosRequest request);
         Task<ProcessarPedidoResponse> ProcessarPedidoAsync(ProcessarPedidoRequest request);
+        Task EnfileirarProcessamentoPedidoAsync(ProcessarPedidoRequest request);
     }
 }
