@@ -45,7 +45,8 @@ public static class AuthEndpoints
             {
                 var id = usuarioService.ObterIdUsuarioAutenticado();
                 var nome = await usuarioService.ObterNomeCompletoUsuarioPorIdAsync(id);
-                return Results.Ok(new { id, nome });
+                var isAdmin = await usuarioService.IsAdminAsync(id);
+                return Results.Ok(new { id, nome,isAdmin });
             }
             catch (UsuarioNaoAutenticadoException )
             {

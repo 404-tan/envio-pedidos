@@ -1,25 +1,33 @@
+<p-toast></p-toast>
 <div class="login-container">
   <h2>Registrar</h2>
 
-  <form [formGroup]="form" (ngSubmit)="login()">
-  <div class="form-group">
-    <label for="email">Email</label>
-    <input id="email" type="email" formControlName="email" />
-  </div>
-    <div class="form-group">
-    <label for="nomeCompleto">Nome Completo</label>
-    <input id="nomeCompleto" type="text" formControlName="nomeCompleto" />
-  </div>
+  <form [formGroup]="form" (ngSubmit)="registrar()" class="form-wrapper">
 
-  <div class="form-group">
-    <label for="senha">Senha</label>
-    <input id="senha" type="password" formControlName="senha" />
-  </div>
     <div class="form-group">
-    <label for="confirmarSenha">Confirmação de senha</label>
-    <input id="confirmarSenha" type="password" formControlName="confirmarSenha" />
-  </div>
+      <label for="email">Email</label>
+      <input pInputText id="email" type="email" formControlName="email" />
+      <p-message *ngIf="campoInvalido('email')" severity="error" text="Email inválido ou obrigatório."></p-message>
+    </div>
 
-  <button type="submit" class="btn-red" [disabled]="form.invalid">Registrar</button>
-</form>
+    <div class="form-group">
+      <label for="nomeCompleto">Nome Completo</label>
+      <input pInputText id="nomeCompleto" type="text" formControlName="nomeCompleto" />
+      <p-message *ngIf="campoInvalido('nomeCompleto')" severity="error" text="Nome é obrigatório."></p-message>
+    </div>
+
+    <div class="form-group">
+      <label for="senha">Senha</label>
+      <p-password id="senha" formControlName="senha" [feedback]="true" [toggleMask]="true"></p-password>
+      <p-message *ngIf="campoInvalido('senha')" severity="error" text="Mínimo de 6 caracteres."></p-message>
+    </div>
+
+    <div class="form-group">
+      <label for="confirmarSenha">Confirmar Senha</label>
+      <p-password id="confirmarSenha" formControlName="confirmarSenha" [feedback]="false" [toggleMask]="true"></p-password>
+      <p-message *ngIf="campoInvalido('confirmarSenha') || senhasDiferentes" severity="error" text="As senhas devem ser iguais."></p-message>
+    </div>
+
+    <p-button type="submit" label="Registrar" [disabled]="form.invalid"></p-button>
+  </form>
 </div>

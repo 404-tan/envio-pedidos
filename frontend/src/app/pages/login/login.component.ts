@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -11,7 +11,7 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.component.css'],
   imports: [CommonModule, ReactiveFormsModule]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   form: FormGroup;
   erroLogin: string | null = null;
 
@@ -22,6 +22,12 @@ export class LoginComponent {
       lembrar: [false]
     });
   }
+  ngOnInit(): void {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) {
+      this.router.navigate(['/dashboard/pedidos']);
+    }
+  }
 
   login() {
     if (this.form.invalid) return;
@@ -30,12 +36,16 @@ export class LoginComponent {
 
     this.authService.login({ email, senhaDigitada: senha }).subscribe({
       next: (res) => {
-        console.log('Login bem-sucedido:', res);
-        localStorage.setItem('token', res.token);
+        if(this.form.value.lembrar){
+          localStorage.setItem('token', res.token);
+        } else{
+          sessionStorage.setItem('token', res.token);
+        }
+
         this.router.navigate(['/dashboard/pedidos']);
       },
       error: (err) => {
-        console.error('Erro no login:', err);
+
         this.erroLogin = 'Usuário ou senha inválidos.';
       }
     });

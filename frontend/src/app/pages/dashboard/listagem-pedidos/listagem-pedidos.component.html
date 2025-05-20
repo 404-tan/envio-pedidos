@@ -1,5 +1,15 @@
+<p-toast></p-toast>
+<div style="display: flex; justify-content: flex-end; padding: 1rem">
+  <p-button
+    icon="pi pi-sign-out"
+    severity="danger"
+    class="p-button-outlined"
+    (click)="logout()"
+  ></p-button>
+</div>
 <div class="tela-pedidos">
   <h1 class="titulo">Pedidos</h1>
+
   <div class="botoes-superior">
     <p-button
       label="Novo Pedido"
@@ -54,7 +64,7 @@
         <td>R$ {{ pedido.total | number:'1.2-2' }}</td>
         <td>
           <span class="badge" [ngClass]="{ 'badge-pendente': pedido.statusAtual === 0 }">
-            {{ pedido.statusAtual === 0 ? 'Pendente' : 'Processado' }}
+            {{ pedido.statusAtual === 0 ? 'Criado' : 'Processado' }}
           </span>
         </td>
         <td>
@@ -63,7 +73,7 @@
         </td>
         <td>
           <p-button
-            *ngIf="pedido.statusAtual === 0"
+            *ngIf="pedido.statusAtual === 0 && perfil?.isAdmin"
             label="Processar"
             icon="pi pi-check"
             (click)="processarPedido(pedido.id)"

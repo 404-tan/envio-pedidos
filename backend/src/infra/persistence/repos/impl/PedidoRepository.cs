@@ -35,19 +35,32 @@ namespace backend.infra.repos.impl
             return pedido.Id;
         }
 
-        public async Task<IList<Pedido>> ObterPedidosPorCursorEStatusAsync(DateTime cursor,Guid? ultimoId, Guid? usuarioId,PedidoStatus? status, int limite = 10)
+        public async Task<IList<Pedido>> ObterPedidosPorCursorEStatusAsync(
+            DateTime cursor,
+            Guid? ultimoId,
+            Guid? usuarioId,
+            PedidoStatus? status,
+            int limite = 10)
         {
             var query = _context.Pedidos
                 .Include(p => p.Itens).ThenInclude(i => i.Produto)
-                .Where(p => p.DataCriacao < cursor || (p.DataCriacao == cursor && ultimoId.HasValue && p.Id.CompareTo(ultimoId.Value) < 0))
-                .OrderByDescending(p => p.DataCriacao)
-                .ThenByDescending(p => p.Id)
-                .Take(limite);
+                .AsQueryable();
 
             if (usuarioId.HasValue)
                 query = query.Where(p => p.IdCliente == usuarioId.Value);
-            if(status.HasValue)
+
+            if (status.HasValue)
                 query = query.Where(p => p.StatusAtual == status.Value);
+
+            query = query.Where(p =>
+                p.DataCriacao < cursor ||
+                (p.DataCriacao == cursor && ultimoId.HasValue && p.Id.CompareTo(ultimoId.Value) < 0)
+            );
+
+            query = query
+                .OrderByDescending(p => p.DataCriacao)
+                .ThenByDescending(p => p.Id)
+                .Take(limite);
 
             return await query.ToListAsync();
         }

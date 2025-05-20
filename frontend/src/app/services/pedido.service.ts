@@ -16,7 +16,7 @@ export class PedidoService {
     return this.http.post(`${this.apiUrl}/api/pedidos`, data);
   }
 
-  processarPedido(data: { idPedido: string }): Observable<any> {
-    return this.http.put(`${this.apiUrl}/api/pedidos/processar`, data);
+  enfileirarPedido(data: { idPedido: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/api/pedidos/enfileirar-processamento`, data);
   }
 }

@@ -13,6 +13,7 @@ import { providePrimeNG } from 'primeng/config';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import LaraLightRed from '../themes/lara-light-red.preset';
+import { MessageService } from 'primeng/api';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes),
@@ -37,6 +38,6 @@ export const appConfig: ApplicationConfig = {
       InputNumberModule,
       ToastModule
     ),
-
+    MessageService
   ]
 };
